@@ -59,9 +59,9 @@ def store_list():
 @query_debugger
 def store_list_prefetch_related():
     """ 4
-    Function :  store_list_prefetch_related
+    Function : store_list_prefetch_related
     Number of Queries : 2
-    Finished in : 0.04s
+    Finished in : 0.01s
     """
     queryset = Store.objects.prefetch_related('books')
 

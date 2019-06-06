@@ -10,9 +10,9 @@ class Command(BaseCommand):
         # book_list()
         # book_list_select_related()
         # store_list()
-        # store_list_prefetch_related()
+        store_list_prefetch_related()
         # store_list_expensive_books_prefetch_related()
-        store_list_expensive_books_prefetch_related_efficient()
+        # store_list_expensive_books_prefetch_related_efficient()
 
 
 
