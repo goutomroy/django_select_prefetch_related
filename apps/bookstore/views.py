@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Prefetch
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from apps.bookstore.models import Book, Publisher, Store
@@ -6,6 +7,7 @@ from apps.bookstore.models import Book, Publisher, Store
 
 """
 # Select Related
+
 We use select_related when the object that you're going to select is a single object, 
 which means forward ForeignKey, OneToOne and backward OneToOne.
 """
@@ -224,6 +226,7 @@ def forward_foreign_key_with_sr(request):
 
 """
 # Prefetch Related
+
 We use prefetch_related when we’re going to get a set of things.
 That means forward and backward ManyToMany, backward ForeignKey. 
 prefetch_related does a separate lookup for each relationship, and performs the “joining” in Python.
@@ -288,7 +291,7 @@ def backward_foreign_key_with_pr(request):
            "bookstore_book"."price",
            "bookstore_book"."publisher_id"
     FROM "bookstore_book"
-    WHERE "bookstore_book"."publisher_id" IN (16, 17, 18, 19, 20)
+    WHERE "bookstore_book"."publisher_id" IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     """
     qs = Publisher.objects.prefetch_related('books')
@@ -438,3 +441,50 @@ def backward_many_to_many_with_pr(request):
         stores = [{'id': store.id, 'name': store.name} for store in book.stores.all()]
         books.append({'id': book.id, 'name': book.name, 'stores': stores})
     return Response(books)
+
+
+@api_view(['GET'])
+def stores_expensive_books_pr(request):
+
+    """
+    Return all stores with expensive books.
+
+    72ms overall
+    7ms on queries
+    12 queries
+
+    Despite the fact that we are using prefetch_related, our queries increased rather than decreased. But why?
+    Using prefetch related, we are telling Django to give all the results to be JOINED, but when we use the filter(price__range=(250, 300)),
+    we are changing the primary query and then Django doesn’t JOIN the right results for us.
+
+    Let’s solve the problem with Prefetch.
+
+    """
+    queryset = Store.objects.prefetch_related('books')
+    stores = []
+    for store in queryset:
+        books = [book.name for book in store.books.filter(price__range=(250, 300))]
+        stores.append({'id': store.id, 'name': store.name, 'books': books})
+
+    return Response(stores)
+
+
+@api_view(['GET'])
+def stores_expensive_books_pr_efficient(request):
+
+    """
+    Return all stores with expensive books.
+
+    63ms overall
+    3ms on queries
+    2 queries
+
+    """
+    queryset = Store.objects.prefetch_related(Prefetch('books', queryset=Book.objects.filter(price__range=(250, 300))))
+
+    stores = []
+    for store in queryset:
+        books = [book.name for book in store.books.all()]
+        stores.append({'id': store.id, 'name': store.name, 'books': books})
+
+    return Response(stores)
