@@ -1,7 +1,6 @@
 from django.contrib import admin
-from apps.bookstore.models import Publisher, Store, Book, Author, BookInStore
+from apps.bookstore.models import Publisher, Store, Book, BookInStore
 
-admin.site.register(Author)
 admin.site.register(Publisher)
 admin.site.register(Book)
 admin.site.register(Store)

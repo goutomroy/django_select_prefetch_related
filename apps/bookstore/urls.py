@@ -14,8 +14,6 @@ urlpatterns = [
     path('backward_foreign_key_with_pr/', views.backward_foreign_key_with_pr),
     path('forward_many_to_many_without_pr/', views.forward_many_to_many_without_pr),
     path('forward_many_to_many_with_pr/', views.forward_many_to_many_with_pr),
-    path('forward_many_to_many_through_without_pr/', views.forward_many_to_many_through_without_pr),
-    path('forward_many_to_many_through_with_pr/', views.forward_many_to_many_through_with_pr),
-    path('backward_many_to_many_through_without_pr/', views.backward_many_to_many_through_without_pr),
-    path('backward_many_to_many_through_with_pr/', views.backward_many_to_many_through_with_pr),
+    path('backward_many_to_many_without_pr/', views.backward_many_to_many_without_pr),
+    path('backward_many_to_many_with_pr/', views.backward_many_to_many_with_pr),
 ]
