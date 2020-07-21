@@ -1,3 +1,514 @@
-from django.shortcuts import render
+from django.contrib.auth.models import User
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from apps.bookstore.models import Author, Book, Publisher, Store
 
-# Create your views here.
+
+# Select Related
+
+
+@api_view(['GET'])
+def forward_one_to_one_without_sr(request):
+    """
+    For testing select_related.
+    Return all the authors without using select_related.
+
+    331ms overall
+    78ms on queries
+    101 queries
+
+    1 query to fetch all authors:
+
+    SELECT "bookstore_author"."id",
+           "bookstore_author"."user_id"
+    FROM "bookstore_author"
+
+    100 separate query to fetch user of each author:
+
+    SELECT "auth_user"."id",
+       "auth_user"."password",
+       "auth_user"."last_login",
+       "auth_user"."is_superuser",
+       "auth_user"."username",
+       "auth_user"."first_name",
+       "auth_user"."last_name",
+       "auth_user"."email",
+       "auth_user"."is_staff",
+       "auth_user"."is_active",
+       "auth_user"."date_joined"
+FROM "auth_user"
+WHERE "auth_user"."id" = 3
+LIMIT 21
+
+    """
+    qs = Author.objects.all()
+    authors = []
+    for author in qs:
+        authors.append({'id': author.id, 'username': author.user.username})
+    return Response(authors)
+
+
+@api_view(['GET'])
+def forward_one_to_one_with_sr(request):
+    """
+    For testing select_related.
+    Return all the authors using select_related.
+
+    82ms overall
+    10ms on queries
+    1 queries
+
+    SELECT "bookstore_author"."id",
+           "bookstore_author"."user_id",
+           "auth_user"."id",
+           "auth_user"."password",
+           "auth_user"."last_login",
+           "auth_user"."is_superuser",
+           "auth_user"."username",
+           "auth_user"."first_name",
+           "auth_user"."last_name",
+           "auth_user"."email",
+           "auth_user"."is_staff",
+           "auth_user"."is_active",
+           "auth_user"."date_joined"
+    FROM "bookstore_author"
+    INNER JOIN "auth_user" ON ("bookstore_author"."user_id" = "auth_user"."id")
+
+    """
+    qs = Author.objects.select_related('user')
+    authors = []
+    for author in qs:
+        authors.append({'id': author.id, 'username': author.user.username})
+    return Response(authors)
+
+
+@api_view(['GET'])
+def backward_one_to_one_without_sr(request):
+    """
+    For testing select_related.
+    Return all the users without using select_related.
+
+    202ms overall
+    41ms on queries
+    101 queries
+
+    1 query to fetch all users:
+
+    SELECT "auth_user"."id",
+           "auth_user"."password",
+           "auth_user"."last_login",
+           "auth_user"."is_superuser",
+           "auth_user"."username",
+           "auth_user"."first_name",
+           "auth_user"."last_name",
+           "auth_user"."email",
+           "auth_user"."is_staff",
+           "auth_user"."is_active",
+           "auth_user"."date_joined"
+    FROM "auth_user"
+
+    100 separate query to fetch author of each user:
+
+    SELECT "bookstore_author"."id",
+           "bookstore_author"."user_id",
+           "bookstore_author"."age"
+    FROM "bookstore_author"
+    WHERE "bookstore_author"."user_id" = 203
+    LIMIT 21
+
+    """
+    qs = User.objects.all()
+    users = []
+    for user in qs:
+        users.append({'id': user.id, 'age': user.author.age})
+    return Response(users)
+
+
+@api_view(['GET'])
+def backward_one_to_one_with_sr(request):
+    """
+    For testing select_related.
+    Return all the users using select_related.
+
+    97ms overall
+    9ms on queries
+    1 queries
+
+    SELECT "auth_user"."id",
+           "auth_user"."password",
+           "auth_user"."last_login",
+           "auth_user"."is_superuser",
+           "auth_user"."username",
+           "auth_user"."first_name",
+           "auth_user"."last_name",
+           "auth_user"."email",
+           "auth_user"."is_staff",
+           "auth_user"."is_active",
+           "auth_user"."date_joined",
+           "bookstore_author"."id",
+           "bookstore_author"."user_id",
+           "bookstore_author"."age"
+    FROM "auth_user"
+    LEFT OUTER JOIN "bookstore_author" ON ("auth_user"."id" = "bookstore_author"."user_id")
+
+    """
+    qs = User.objects.select_related('author')
+    users = []
+    for user in qs:
+        users.append({'id': user.id, 'age': user.author.age})
+    return Response(users)
+
+
+@api_view(['GET'])
+def forward_foreign_key_without_sr(request):
+    """
+    For testing select_related.
+    Return all the books without using select_related. Here we are excluding authors of a book,
+    just focusing on publisher which is a foreign key.
+
+    188ms overall
+    34ms on queries
+    101 queries
+
+    1 query to fetch all books:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+
+    100 separate query to fetch publisher of each book:
+
+    SELECT "bookstore_publisher"."id",
+           "bookstore_publisher"."name"
+    FROM "bookstore_publisher"
+    WHERE "bookstore_publisher"."id" = 16
+    LIMIT 21
+
+    """
+    qs = Book.objects.all()
+    books = []
+    for book in qs:
+        books.append({'id': book.id, 'name': book.name, 'publisher': book.publisher.name})
+    return Response(books)
+
+
+@api_view(['GET'])
+def forward_foreign_key_with_sr(request):
+    """
+    For testing select_related.
+    Return all the books using select_related. Here we are excluding authors of a book,
+    just focusing on publisher which is a foreign key.
+
+    50ms overall
+    1ms on queries
+    1 queries
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id",
+           "bookstore_publisher"."id",
+           "bookstore_publisher"."name"
+    FROM "bookstore_book"
+    INNER JOIN "bookstore_publisher" ON ("bookstore_book"."publisher_id" = "bookstore_publisher"."id")
+
+    """
+    qs = Book.objects.select_related('publisher')
+    books = []
+    for book in qs:
+        books.append({'id': book.id, 'name': book.name, 'publisher': book.publisher.name})
+    return Response(books)
+
+
+# Prefetch Related
+
+@api_view(['GET'])
+def backward_foreign_key_without_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the publishers without using prefetch_related.
+
+    64ms overall
+    2ms on queries
+    6 queries
+
+    1 query to fetch all publishers:
+
+    SELECT "bookstore_publisher"."id",
+           "bookstore_publisher"."name"
+    FROM "bookstore_publisher"
+
+    5 separate query to fetch books of each publisher:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    WHERE "bookstore_book"."publisher_id" = 16
+
+    """
+    qs = Publisher.objects.all()
+    publishers = []
+    for publisher in qs:
+        books = [{'id': book.id, 'name': book.name} for book in publisher.books.all()]
+        publishers.append({'id': publisher.id, 'name': publisher.name, 'books': books})
+
+    return Response(publishers)
+
+
+@api_view(['GET'])
+def backward_foreign_key_with_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the publishers using prefetch_related.
+
+    60ms overall
+    2ms on queries
+    2 queries
+
+    1 query to fetch all publishers:
+
+    SELECT "bookstore_publisher"."id",
+           "bookstore_publisher"."name"
+    FROM "bookstore_publisher"
+
+    Another query to fetch all the books of publishers, then django does pythonic join of these 2 queries to populate result:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    WHERE "bookstore_book"."publisher_id" IN (16, 17, 18, 19, 20)
+
+    """
+    qs = Publisher.objects.prefetch_related('books')
+    publishers = []
+    for publisher in qs:
+        books = [{'id': book.id, 'name': book.name} for book in publisher.books.all()]
+        publishers.append({'id': publisher.id, 'name': publisher.name, 'books': books})
+
+    return Response(publishers)
+
+
+@api_view(['GET'])
+def forward_many_to_many_without_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the books without using prefetch_related. Here we are excluding publisher of a book,
+    just focusing on authors of each book.
+
+    321ms overall
+    68ms on queries
+    101 queries
+
+    1 query to fetch all books:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+
+    100 separate query to fetch authors of each book:
+
+    SELECT "bookstore_author"."id",
+           "bookstore_author"."user_id",
+           "bookstore_author"."age"
+    FROM "bookstore_author"
+    INNER JOIN "bookstore_book_authors" ON ("bookstore_author"."id" = "bookstore_book_authors"."author_id")
+    WHERE "bookstore_book_authors"."book_id" = 402
+
+    """
+    qs = Book.objects.all()
+    books = []
+    for book in qs:
+        authors = [{'id': author.id, 'age': author.age} for author in book.authors.all()]
+        books.append({'id': book.id, 'name': book.name, 'authors': authors})
+    return Response(books)
+
+
+@api_view(['GET'])
+def forward_many_to_many_with_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the books using prefetch_related. Here we are excluding publisher of a book,
+    just focusing on authors of each book.
+
+    152ms overall
+    2ms on queries
+    2 queries
+
+    1 query to fetch all books:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+
+    Another query to fetch all the authors of selected books, then django does pythonic join of these 2 queries
+    to populate result:
+
+    SELECT ("bookstore_book_authors"."book_id") AS "_prefetch_related_val_book_id",
+           "bookstore_author"."id",
+           "bookstore_author"."user_id",
+           "bookstore_author"."age"
+    FROM "bookstore_author"
+    INNER JOIN "bookstore_book_authors" ON ("bookstore_author"."id" = "bookstore_book_authors"."author_id")
+    WHERE "bookstore_book_authors"."book_id" IN (402, 403, 404, 405, ...)
+
+    """
+    qs = Book.objects.prefetch_related('authors')
+    books = []
+    for book in qs:
+        authors = [{'id': author.id, 'age': author.age} for author in book.authors.all()]
+        books.append({'id': book.id, 'name': book.name, 'authors': authors})
+    return Response(books)
+
+
+@api_view(['GET'])
+def forward_many_to_many_through_without_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the stores without using prefetch_related.
+
+    68ms overall
+    4ms on queries
+    11 queries
+
+    1 query to fetch all stores:
+
+    SELECT "bookstore_store"."id",
+           "bookstore_store"."name"
+    FROM "bookstore_store"
+
+    10 separate query to fetch books of each store:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_book"."id" = "bookstore_bookinstore"."book_id")
+    WHERE "bookstore_bookinstore"."store_id" = 41
+
+    """
+    qs = Store.objects.all()
+    stores = []
+    for store in qs:
+        books = [{'id': book.id, 'name': book.name} for book in store.books.all()]
+        stores.append({'id': store.id, 'name': store.name, 'books': books})
+
+    return Response(stores)
+
+
+@api_view(['GET'])
+def forward_many_to_many_through_with_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the stores using prefetch_related.
+
+    62ms overall
+    1ms on queries
+    2 queries
+
+    1 query to fetch all stores:
+
+    SELECT "bookstore_store"."id",
+           "bookstore_store"."name"
+    FROM "bookstore_store"
+
+    Another query to fetch all the books of selected stores, then django does pythonic join of these 2 queries to populate result:
+
+    SELECT ("bookstore_bookinstore"."store_id") AS "_prefetch_related_val_store_id",
+           "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_book"."id" = "bookstore_bookinstore"."book_id")
+    WHERE "bookstore_bookinstore"."store_id" IN (41, 42, 43, 44, ...)
+
+    """
+    qs = Store.objects.prefetch_related('books')
+    stores = []
+    for store in qs:
+        books = [{'id': book.id, 'name': book.name} for book in store.books.all()]
+        stores.append({'id': store.id, 'name': store.name, 'books': books})
+
+    return Response(stores)
+
+
+@api_view(['GET'])
+def backward_many_to_many_through_without_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the books with associated stores without using prefetch_related.
+
+    272ms overall
+    46ms on queries
+    101 queries
+
+    1 query to fetch all books:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+
+    100 separate query to fetch stores of each book:
+
+    SELECT "bookstore_store"."id",
+           "bookstore_store"."name"
+    FROM "bookstore_store"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_store"."id" = "bookstore_bookinstore"."store_id")
+    WHERE "bookstore_bookinstore"."book_id" = 402
+
+    """
+    qs = Book.objects.all()
+    books = []
+    for book in qs:
+        stores = [{'id': store.id, 'name': store.name} for store in book.stores.all()]
+        books.append({'id': book.id, 'name': book.name, 'stores': stores})
+    return Response(books)
+
+
+@api_view(['GET'])
+def backward_many_to_many_through_with_pr(request):
+    """
+    For testing prefetch_related.
+    Return all the books with associated stores using prefetch_related.
+
+    176ms overall
+    6ms on queries
+    2 queries
+
+    1 query to fetch all books:
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+
+    Another query to fetch stores of each book, then django does pythonic join of these 2 queries to populate result:
+
+    SELECT ("bookstore_bookinstore"."book_id") AS "_prefetch_related_val_book_id",
+           "bookstore_store"."id",
+           "bookstore_store"."name"
+    FROM "bookstore_store"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_store"."id" = "bookstore_bookinstore"."store_id")
+    WHERE "bookstore_bookinstore"."book_id" IN (402, 403, 404, ...)
+
+    """
+    qs = Book.objects.prefetch_related('stores')
+    books = []
+    for book in qs:
+        stores = [{'id': store.id, 'name': store.name} for store in book.stores.all()]
+        books.append({'id': book.id, 'name': book.name, 'stores': stores})
+    return Response(books)

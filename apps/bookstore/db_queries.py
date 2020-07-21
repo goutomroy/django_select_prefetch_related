@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models import Prefetch
 from apps.bookstore.decorators import query_debugger
 from apps.bookstore.models import Book, Store
@@ -75,6 +77,7 @@ def store_list_expensive_books_prefetch_related():
 def store_list_expensive_books_prefetch_related_efficient():
 
     queryset = Store.objects.prefetch_related(Prefetch('books', queryset=Book.objects.filter(price__range=(250, 300))))
+    logging.info(queryset.query)
 
     stores = []
 

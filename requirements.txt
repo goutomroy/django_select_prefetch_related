@@ -1,3 +1,9 @@
-Django==2.2.2
-pytz==2019.1
+asgiref==3.2.3
+Django==3.0.2
+pytz==2019.3
 sqlparse==0.3.0
+django-extensions==3.0.3
+djangorestframework==3.11.0
+django-silk==4.0.1
+factory-boy==2.12.0
+

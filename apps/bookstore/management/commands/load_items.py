@@ -1,6 +1,9 @@
 import random
+
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from apps.bookstore.models import Publisher, Store, Book
+from apps.bookstore.models import Publisher, Store, Book, Author
+from apps.bookstore.tests.factories import UserFactory
 
 
 class Command(BaseCommand):
@@ -10,6 +13,8 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
+        User.objects.all().delete()
+        Author.objects.all().delete()
         Publisher.objects.all().delete()
         Book.objects.all().delete()
         Store.objects.all().delete()
@@ -18,15 +23,14 @@ class Command(BaseCommand):
         publishers = [Publisher(name=f"Publisher{index}") for index in range(1, 6)]
         Publisher.objects.bulk_create(publishers)
 
-        # create 20 books for every publishers
+        # create 20 books for every publishers and one author for each book
         counter = 0
-        books = []
         for publisher in Publisher.objects.all():
             for i in range(20):
                 counter = counter + 1
-                books.append(Book(name=f"Book{counter}", price=random.randint(50, 300), publisher=publisher))
-
-        Book.objects.bulk_create(books)
+                book = Book.objects.create(name=f"Book{counter}", price=random.randint(50, 300), publisher=publisher)
+                author = Author.objects.create(user=UserFactory(), age=random.randint(20, 80))
+                book.authors.set([author])
 
         # create 10 stores and insert 10 books in every store
         books = list(Book.objects.all())
