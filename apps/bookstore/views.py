@@ -453,6 +453,31 @@ def stores_expensive_books_pr(request):
     7ms on queries
     12 queries
 
+    SELECT "bookstore_store"."id",
+           "bookstore_store"."name"
+    FROM "bookstore_store"
+
+    SELECT ("bookstore_bookinstore"."store_id") AS "_prefetch_related_val_store_id",
+           "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_book"."id" = "bookstore_bookinstore"."book_id")
+    WHERE "bookstore_bookinstore"."store_id" IN (41, 42, 43, 44, 45, 46, 47, 48, 49, 50)
+
+    More 10 queries as below :
+
+    SELECT "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_book"."id" = "bookstore_bookinstore"."book_id")
+    WHERE ("bookstore_bookinstore"."store_id" = 41
+           AND "bookstore_book"."price" BETWEEN 250 AND 300)
+
+
     Despite the fact that we are using prefetch_related, our queries increased rather than decreased. But why?
     Using prefetch related, we are telling Django to give all the results to be JOINED, but when we use the filter(price__range=(250, 300)),
     we are changing the primary query and then Django doesn’t JOIN the right results for us.
@@ -460,6 +485,7 @@ def stores_expensive_books_pr(request):
     Let’s solve the problem with Prefetch.
 
     """
+
     queryset = Store.objects.prefetch_related('books')
     stores = []
     for store in queryset:
@@ -479,7 +505,20 @@ def stores_expensive_books_pr_efficient(request):
     3ms on queries
     2 queries
 
+    SELECT "bookstore_store"."id", "bookstore_store"."name"
+    FROM "bookstore_store"
+
+    SELECT ("bookstore_bookinstore"."store_id") AS "_prefetch_related_val_store_id",
+           "bookstore_book"."id",
+           "bookstore_book"."name",
+           "bookstore_book"."price",
+           "bookstore_book"."publisher_id"
+    FROM "bookstore_book"
+    INNER JOIN "bookstore_bookinstore" ON ("bookstore_book"."id" = "bookstore_bookinstore"."book_id")
+    WHERE ("bookstore_book"."price" BETWEEN 250 AND 300
+           AND "bookstore_bookinstore"."store_id" IN (41, 42, 43, 44, 45, 46, 47, 48, 49, 50))
     """
+
     queryset = Store.objects.prefetch_related(Prefetch('books', queryset=Book.objects.filter(price__range=(250, 300))))
 
     stores = []

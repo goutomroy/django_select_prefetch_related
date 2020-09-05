@@ -2,6 +2,8 @@ import random
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from django.db.models import Q
+
 from apps.bookstore.models import Publisher, Store, Book
 from apps.bookstore.tests.factories import UserFactory
 
@@ -13,7 +15,7 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        User.objects.all().delete()
+        User.objects.filter(~Q(is_superuser=True) | ~Q(is_staff=True)).delete()
         Publisher.objects.all().delete()
         Book.objects.all().delete()
         Store.objects.all().delete()
