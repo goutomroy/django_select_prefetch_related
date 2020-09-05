@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'silk',
     'django_extensions',
     'rest_framework',
-    'apps.bookstore'
+    'apps.bookstore',
+    'apps.blog'
 ]
 
 MIDDLEWARE = [

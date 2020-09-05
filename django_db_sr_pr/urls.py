@@ -19,6 +19,7 @@ from django.urls import path, include, re_path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.bookstore.urls')),
+    path('', include('apps.blog.urls')),
     re_path(r'^silk/', include('silk.urls', namespace='silk'))
 ]
 
