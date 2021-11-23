@@ -224,6 +224,7 @@ def forward_foreign_key_with_sr(request):
         books.append({'id': book.id, 'name': book.name, 'publisher': book.publisher.name})
     return Response(books)
 
+
 @api_view(['GET'])
 def books_of_particular_owner(request: Request):
     """
