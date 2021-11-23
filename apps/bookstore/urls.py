@@ -18,4 +18,7 @@ urlpatterns = [
     path('backward_many_to_many_with_pr/', views.backward_many_to_many_with_pr),
     path('stores_expensive_books_pr/', views.stores_expensive_books_pr),
     path('stores_expensive_books_pr_efficient/', views.stores_expensive_books_pr_efficient),
+
+
+    path('books_of_particular_owner/', views.books_of_particular_owner),
 ]

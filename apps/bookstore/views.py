@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db.models import Prefetch
 from rest_framework.decorators import api_view
+from rest_framework.request import Request
 from rest_framework.response import Response
 from apps.bookstore.models import Book, Publisher, Store
 
@@ -218,6 +219,18 @@ def forward_foreign_key_with_sr(request):
 
     """
     qs = Book.objects.select_related('publisher')
+    books = []
+    for book in qs:
+        books.append({'id': book.id, 'name': book.name, 'publisher': book.publisher.name})
+    return Response(books)
+
+@api_view(['GET'])
+def books_of_particular_owner(request: Request):
+    """
+    Return all the books of particular publisher, using select_related.
+    """
+    qp_owner = request.query_params['owner']
+    qs = Book.objects.filter(publisher__owner=qp_owner).select_related('publisher')
     books = []
     for book in qs:
         books.append({'id': book.id, 'name': book.name, 'publisher': book.publisher.name})

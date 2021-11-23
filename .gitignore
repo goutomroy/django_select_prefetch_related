@@ -9,3 +9,4 @@
 *.log
 /static
 /media
+/venv/
